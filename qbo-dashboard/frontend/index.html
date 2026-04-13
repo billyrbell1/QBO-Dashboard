@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8f7f4;color:#1a1a18;min-height:100vh}
+.shell{max-width:1200px;margin:0 auto;padding:2rem 1.5rem}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:12px}
+.topbar h1{font-size:20px;font-weight:500}
+.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+select.period{font-size:13px;padding:6px 10px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+button.manage{font-size:13px;padding:6px 14px;border:0.5px solid #ccc;border-radius:8px;background:#fff;color:#444;cursor:pointer}
+button.manage:hover{background:#f0efe9}
+.nav{display:flex;gap:6px;margin-bottom:1.5rem;flex-wrap:wrap}
+.nav button{padding:6px 14px;font-size:13px;border-radius:8px;border:0.5px solid #ddd;background:#fff;color:#666;cursor:pointer}
+.nav button.active{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.5rem}
+.metric{background:#fff;border:0.5px solid #e8e7e2;border-radius:10px;padding:14px 16px}
+.metric .lbl{font-size:12px;color:#888;margin-bottom:6px}
+.metric .val{font-size:22px;font-weight:500}
+.metric .val.pos{color:#27500A}
+.metric .val.neg{color:#A32D2D}
+.metric .sub{font-size:11px;color:#aaa;margin-top:3px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+.card{background:#fff;border:0.5px solid #e8e7e2;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.card-title{font-size:12px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px}
+.entity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:1.5rem}
+.entity-card{background:#fff;border:0.5px solid #e8e7e2;border-radius:12px;padding:1rem}
+.entity-card.placeholder{opacity:0.45}
+.entity-card .ename{font-size:13px;font-weight:500;margin-bottom:2px}
+.entity-card .etype{font-size:11px;color:#aaa;margin-bottom:12px}
+.entity-card .erow{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid #f0efe9}
+.entity-card .erow:last-child{border:none;font-weight:500}
+.entity-card .erow .el{color:#888}
+.entity-card .erow .ev{color:#1a1a18}
+.entity-card .erow .ev.pos{color:#3B6D11}
+.entity-card .erow .ev.neg{color:#A32D2D}
+.pl-table{width:100%;border-collapse:collapse;font-size:13px}
+.pl-table th{font-size:11px;color:#888;font-weight:400;text-transform:uppercase;letter-spacing:0.04em;padding:6px 8px;text-align:right;border-bottom:0.5px solid #eee}
+.pl-table th:first-child{text-align:left}
+.pl-table td{padding:7px 8px;border-bottom:0.5px solid #f5f4f0;text-align:right;color:#1a1a18}
+.pl-table td:first-child{text-align:left;color:#444}
+.pl-table .sec td{background:#f8f7f4;font-weight:500;font-size:12px;color:#1a1a18}
+.pl-table .tot td{font-weight:500;border-top:1px solid #ddd;border-bottom:none}
+.pl-table .sp td{border:none;height:6px}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px}
+.badge.live{background:#E1F5EE;color:#085041}
+.badge.mock{background:#FAEEDA;color:#633806}
+.badge.ph{background:#f0efe9;color:#888}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}
+.conn-panel{background:#fff;border:0.5px solid #e8e7e2;border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+.conn-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:0.5px solid #f5f4f0;flex-wrap:wrap;gap:8px}
+.conn-row:last-child{border:none}
+.conn-info .cname{font-size:14px;font-weight:500}
+.conn-info .ctype{font-size:12px;color:#aaa;margin-top:2px}
+button.connect-btn{font-size:12px;padding:6px 14px;border-radius:8px;border:0.5px solid #185FA5;color:#185FA5;background:#fff;cursor:pointer}
+button.connect-btn:hover{background:#E6F1FB}
+button.connect-btn.connected{border-color:#0F6E56;color:#0F6E56}
+button.connect-btn.connected:hover{background:#E1F5EE}
+button.disconnect-btn{font-size:12px;padding:6px 14px;border-radius:8px;border:0.5px solid #ddd;color:#888;background:#fff;cursor:pointer;margin-left:6px}
+.tab{display:none}
+.tab.active{display:block}
+.loading{text-align:center;padding:3rem;color:#aaa;font-size:14px}
+.error-msg{background:#FCEBEB;color:#791F1F;border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:1rem}
+.coming-soon{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#f0efe9;color:#888;margin-left:8px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div>
+      <h1>Portfolio overview</h1>
+      <div style="font-size:13px;color:#888;margin-top:3px" id="dataStatusBar">Loading...</div>
+    </div>
+    <div class="topbar-right">
+      <select class="period" id="periodSel">
+        <option value="ytd">YTD 2025</option>
+        <option value="q1">Q1 2025</option>
+        <option value="q2">Q2 2025</option>
+        <option value="q3">Q3 2025</option>
+        <option value="q4">Q4 2025</option>
+        <option value="fy24">FY 2024</option>
+      </select>
+      <button class="manage" onclick="showTab('connections')">Manage connections</button>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="active" onclick="showTab('overview',this)">Overview</button>
+    <button onclick="showTab('pl',this)">P&amp;L</button>
+    <button onclick="showTab('balance',this)">Balance sheet</button>
+    <button onclick="showTab('cashflow',this)">Cash position</button>
+    <button onclick="showTab('entities',this)">By entity</button>
+    <button onclick="showTab('connections',this)">Connections</button>
+  </div>
+
+  <div id="tab-overview" class="tab active"></div>
+  <div id="tab-pl" class="tab"></div>
+  <div id="tab-balance" class="tab"></div>
+  <div id="tab-cashflow" class="tab"></div>
+  <div id="tab-entities" class="tab"></div>
+  <div id="tab-connections" class="tab"></div>
+</div>
+
+<script>
+const API = '';
+const ENTITIES_META = [
+  {id:'p1capital',    name:'P1 Capital LLC',          type:'Holding / operating',       color:'#534AB7', dot:'#7F77DD'},
+  {id:'bellrei',      name:'Bell REI, LLC',            type:'Real estate investment',    color:'#185FA5', dot:'#378ADD'},
+  {id:'collegeave',  name:'College Ave',              type:'Short-term rental',         color:'#0F6E56', dot:'#1D9E75'},
+  {id:'gainesville', name:'Gainesville 19th DR, LLC', type:'15-unit industrial rental', color:'#854F0B', dot:'#BA7517'},
+  {id:'offshore',    name:'Offshore Construction, LLC',type:'Window & door installation',color:'#888780', dot:'#B4B2A9', placeholder:true},
+];
+
+let financialData = null;
+let entityStatuses = {};
+let charts = {};
+let currentTab = 'overview';
+
+function fmt(n){if(n===undefined||n===null)return'—';return(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString();}
+function fmtK(n){if(!n)return'$0';return(n<0?'-$':'$')+Math.abs(Math.round(n/1000)).toLocaleString()+'K';}
+function pct(a,b){if(!b)return'—';return Math.round(a/b*100)+'%';}
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+async function loadEntities() {
+  try {
+    const res = await fetch(`${API}/api/entities`);
+    const data = await res.json();
+    data.forEach(e => { entityStatuses[e.id] = e; });
+  } catch(e) { console.warn('Could not load entities:', e.message); }
+}
+
+async function loadFinancials(period) {
+  try {
+    const res = await fetch(`${API}/api/financials?period=${period}`);
+    financialData = await res.json();
+    updateStatusBar();
+  } catch(e) {
+    console.warn('Could not load financials:', e.message);
+    financialData = null;
+  }
+}
+
+function updateStatusBar() {
+  const bar = document.getElementById('dataStatusBar');
+  if (!financialData) { bar.innerHTML = '<span class="badge mock">Backend offline — showing demo data</span>'; return; }
+  const connected = ENTITIES_META.filter(e => !e.placeholder && financialData.entities[e.id]?.connected).length;
+  const total = ENTITIES_META.filter(e => !e.placeholder).length;
+  bar.innerHTML = connected === total
+    ? `<span class="badge live">${connected}/${total} entities live</span>`
+    : `<span class="badge mock">${connected}/${total} entities connected</span> — <a href="#" onclick="showTab('connections');return false" style="color:#185FA5;font-size:13px">connect more</a>`;
+}
+
+function getEntityData(entityId) {
+  if (!financialData || !financialData.entities[entityId]?.connected) return null;
+  return financialData.entities[entityId];
+}
+
+function getMockPL(entityId) {
+  const mock = {
+    p1capital:  {revenue:412000,cogs:118000,gross:294000,opex:94000,net:200000},
+    bellrei:    {revenue:185000,cogs:22000, gross:163000,opex:48000, net:115000},
+    collegeave: {revenue:138000,cogs:41000, gross:97000, opex:31000, net:66000},
+    gainesville:{revenue:318000,cogs:68000, gross:250000,opex:72000, net:178000},
+    offshore:   null,
+  };
+  return mock[entityId];
+}
+
+function getMockBS(entityId) {
+  const mock = {
+    p1capital:  {cash:143000,ar:62000,totalAssets:980000, totalLiab:310000,equity:670000},
+    bellrei:    {cash:94000, ar:18000,totalAssets:1450000,totalLiab:695000,equity:755000},
+    collegeave: {cash:58000, ar:9000, totalAssets:620000, totalLiab:385000,equity:235000},
+    gainesville:{cash:211000,ar:31000,totalAssets:2100000,totalLiab:940000,equity:1160000},
+    offshore:   null,
+  };
+  return mock[entityId];
+}
+
+function getPL(entityId) {
+  const live = getEntityData(entityId);
+  return live ? live.pl : getMockPL(entityId);
+}
+
+function getBS(entityId) {
+  const live = getEntityData(entityId);
+  return live ? live.bs : getMockBS(entityId);
+}
+
+function isLive(entityId) {
+  return !!(financialData && financialData.entities[entityId]?.connected);
+}
+
+function showTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+  currentTab = tab;
+  renderTab(tab);
+}
+
+function renderTab(tab) {
+  if (tab==='overview') renderOverview();
+  else if (tab==='pl') renderPL();
+  else if (tab==='balance') renderBalance();
+  else if (tab==='cashflow') renderCashflow();
+  else if (tab==='entities') renderEntities();
+  else if (tab==='connections') renderConnections();
+}
+
+function renderOverview() {
+  const liveEntities = ENTITIES_META.filter(e => !e.placeholder);
+  const totRev = liveEntities.reduce((s,e) => s + (getPL(e.id)?.revenue||0), 0);
+  const totNet = liveEntities.reduce((s,e) => s + (getPL(e.id)?.net||0), 0);
+  const totGross = liveEntities.reduce((s,e) => s + (getPL(e.id)?.gross||0), 0);
+  const totCash = liveEntities.reduce((s,e) => s + (getBS(e.id)?.cash||0), 0);
+  const totEquity = liveEntities.reduce((s,e) => s + (getBS(e.id)?.equity||0), 0);
+
+  const el = document.getElementById('tab-overview');
+  el.innerHTML = `
+    <div class="metric-grid">
+      <div class="metric"><div class="lbl">Total revenue</div><div class="val">${fmt(totRev)}</div></div>
+      <div class="metric"><div class="lbl">Gross profit</div><div class="val pos">${fmt(totGross)}</div><div class="sub">${pct(totGross,totRev)} margin</div></div>
+      <div class="metric"><div class="lbl">Net income</div><div class="val pos">${fmt(totNet)}</div><div class="sub">${pct(totNet,totRev)} net margin</div></div>
+      <div class="metric"><div class="lbl">Total cash</div><div class="val">${fmt(totCash)}</div></div>
+      <div class="metric"><div class="lbl">Total equity</div><div class="val">${fmt(totEquity)}</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="card-title">Revenue by entity</div><div style="position:relative;height:220px"><canvas id="revChart" role="img" aria-label="Revenue by entity bar chart"></canvas></div></div>
+      <div class="card"><div class="card-title">Net income by entity</div><div style="position:relative;height:220px"><canvas id="netChart" role="img" aria-label="Net income by entity bar chart"></canvas></div></div>
+    </div>
+    <div class="card"><div class="card-title">Portfolio net margin by entity</div><div style="position:relative;height:180px"><canvas id="marginChart" role="img" aria-label="Net margin by entity"></canvas></div></div>
+  `;
+
+  destroyChart('revChart'); destroyChart('netChart'); destroyChart('marginChart');
+
+  const labels = liveEntities.map(e => e.name.split(' ').slice(0,2).join(' '));
+  const mkChart = (id, data, label) => new Chart(document.getElementById(id), {
+    type:'bar',
+    data:{labels, datasets:[{label, data, backgroundColor:liveEntities.map(e=>e.color+'20'), borderColor:liveEntities.map(e=>e.color), borderWidth:1.5, borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmtK(v),color:'#aaa',font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{color:'#888',font:{size:11}},grid:{display:false}}}}
+  });
+  charts.revChart = mkChart('revChart', liveEntities.map(e=>getPL(e.id)?.revenue||0), 'Revenue');
+  charts.netChart = mkChart('netChart', liveEntities.map(e=>getPL(e.id)?.net||0), 'Net income');
+  charts.marginChart = new Chart(document.getElementById('marginChart'), {
+    type:'bar',
+    data:{labels, datasets:[{label:'Net margin %', data:liveEntities.map(e=>{const p=getPL(e.id);return p?Math.round(p.net/p.revenue*100):0}), backgroundColor:liveEntities.map(e=>e.color+'20'), borderColor:liveEntities.map(e=>e.color), borderWidth:1.5, borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+'%',color:'#aaa',font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{color:'#888',font:{size:11}},grid:{display:false}}}}
+  });
+}
+
+function renderPL() {
+  const liveEntities = ENTITIES_META.filter(e => !e.placeholder);
+  const totR = liveEntities.reduce((s,e)=>s+(getPL(e.id)?.revenue||0),0);
+  const totC = liveEntities.reduce((s,e)=>s+(getPL(e.id)?.cogs||0),0);
+  const totG = liveEntities.reduce((s,e)=>s+(getPL(e.id)?.gross||0),0);
+  const totO = liveEntities.reduce((s,e)=>s+(getPL(e.id)?.opex||0),0);
+  const totN = liveEntities.reduce((s,e)=>s+(getPL(e.id)?.net||0),0);
+
+  const legend = liveEntities.map(e=>`<span style="display:flex;align-items:center;gap:5px"><span class="dot" style="background:${e.dot}"></span><span style="font-size:12px;color:#888">${e.name.split(' ').slice(0,2).join(' ')} ${isLive(e.id)?'<span class="badge live" style="font-size:10px">live</span>':''}</span></span>`).join('');
+
+  const hdr = `<tr><th>Line item</th>${liveEntities.map(e=>`<th>${e.name.split(' ')[0]}</th>`).join('')}<th>Total</th></tr>`;
+  const row = (label, key, cls='') => {
+    const vals = liveEntities.map(e=>{const v=getPL(e.id)?.[key]||0;return`<td>${fmtK(v)}</td>`}).join('');
+    const tot = liveEntities.reduce((s,e)=>s+(getPL(e.id)?.[key]||0),0);
+    return`<tr class="${cls}"><td>${label}</td>${vals}<td>${fmtK(tot)}</td></tr>`;
+  };
+
+  document.getElementById('tab-pl').innerHTML = `
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+        <div style="font-size:15px;font-weight:500">Consolidated P&amp;L</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">${legend}</div>
+      </div>
+      <div style="overflow-x:auto">
+      <table class="pl-table">
+        ${hdr}
+        <tr class="sec"><td colspan="${liveEntities.length+2}">Revenue</td></tr>
+        ${row('Gross revenue','revenue')}
+        ${row('Cost of goods sold','cogs')}
+        <tr class="tot"><td>Gross profit</td>${liveEntities.map(e=>`<td style="color:#3B6D11">${fmtK(getPL(e.id)?.gross||0)}</td>`).join('')}<td style="color:#3B6D11">${fmtK(totG)}</td></tr>
+        <tr class="sp"><td colspan="${liveEntities.length+2}"></td></tr>
+        <tr class="sec"><td colspan="${liveEntities.length+2}">Operating expenses</td></tr>
+        ${row('Total operating expenses','opex')}
+        <tr class="sp"><td colspan="${liveEntities.length+2}"></td></tr>
+        <tr class="tot"><td>Net income</td>${liveEntities.map(e=>{const v=getPL(e.id)?.net||0;return`<td style="color:${v>=0?'#3B6D11':'#A32D2D'};font-weight:500">${fmtK(v)}</td>`}).join('')}<td style="color:${totN>=0?'#3B6D11':'#A32D2D'};font-weight:500">${fmtK(totN)}</td></tr>
+      </table>
+      </div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:0.5px solid #eee;display:flex;gap:12px;flex-wrap:wrap">
+        <div class="metric" style="flex:1;min-width:120px"><div class="lbl">Total net income</div><div class="val pos">${fmt(totN)}</div></div>
+        <div class="metric" style="flex:1;min-width:120px"><div class="lbl">Blended net margin</div><div class="val pos">${pct(totN,totR)}</div></div>
+        <div class="metric" style="flex:1;min-width:120px"><div class="lbl">Gross margin</div><div class="val pos">${pct(totG,totR)}</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderBalance() {
+  const liveEntities = ENTITIES_META.filter(e => !e.placeholder);
+  const totAssets = liveEntities.reduce((s,e)=>s+(getBS(e.id)?.totalAssets||0),0);
+  const totLiab = liveEntities.reduce((s,e)=>s+(getBS(e.id)?.totalLiab||0),0);
+  const totEquity = liveEntities.reduce((s,e)=>s+(getBS(e.id)?.equity||0),0);
+  const totCash = liveEntities.reduce((s,e)=>s+(getBS(e.id)?.cash||0),0);
+  const totAR = liveEntities.reduce((s,e)=>s+(getBS(e.id)?.ar||0),0);
+
+  document.getElementById('tab-balance').innerHTML = `
+    <div class="metric-grid" style="margin-bottom:1.25rem">
+      <div class="metric"><div class="lbl">Total assets</div><div class="val">${fmt(totAssets)}</div></div>
+      <div class="metric"><div class="lbl">Total liabilities</div><div class="val neg">${fmt(totLiab)}</div></div>
+      <div class="metric"><div class="lbl">Total equity</div><div class="val pos">${fmt(totEquity)}</div></div>
+      <div class="metric"><div class="lbl">Debt-to-equity</div><div class="val">${totEquity?Math.round(totLiab/totEquity*100)/100:'—'}x</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Balance sheet by entity</div>
+      <div style="overflow-x:auto">
+      <table class="pl-table">
+        <tr><th>Entity</th><th>Cash</th><th>A/R</th><th>Total assets</th><th>Total liab.</th><th>Equity</th></tr>
+        ${liveEntities.map(e=>{
+          const b=getBS(e.id)||{};
+          return`<tr>
+            <td><span class="dot" style="background:${e.dot}"></span> ${e.name.split(' ').slice(0,2).join(' ')}</td>
+            <td>${fmt(b.cash)}</td>
+            <td>${fmt(b.ar)}</td>
+            <td>${fmt(b.totalAssets)}</td>
+            <td style="color:#A32D2D">${fmt(b.totalLiab)}</td>
+            <td style="color:#3B6D11">${fmt(b.equity)}</td>
+          </tr>`;
+        }).join('')}
+        <tr class="tot">
+          <td>Portfolio total</td>
+          <td>${fmt(totCash)}</td>
+          <td>${fmt(totAR)}</td>
+          <td>${fmt(totAssets)}</td>
+          <td style="color:#A32D2D">${fmt(totLiab)}</td>
+          <td style="color:#3B6D11">${fmt(totEquity)}</td>
+        </tr>
+      </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderCashflow() {
+  const liveEntities = ENTITIES_META.filter(e => !e.placeholder);
+  const totCash = liveEntities.reduce((s,e)=>s+(getBS(e.id)?.cash||0),0);
+  destroyChart('cashChart');
+  document.getElementById('tab-cashflow').innerHTML = `
+    <div class="metric-grid" style="margin-bottom:1.25rem">
+      <div class="metric"><div class="lbl">Total cash across entities</div><div class="val">${fmt(totCash)}</div></div>
+      <div class="metric"><div class="lbl">Avg per entity</div><div class="val">${fmt(Math.round(totCash/liveEntities.length))}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Cash by entity</div>
+      <div style="position:relative;height:${liveEntities.length*56+60}px"><canvas id="cashChart" role="img" aria-label="Cash by entity horizontal bar chart"></canvas></div>
+    </div>
+  `;
+  charts.cashChart = new Chart(document.getElementById('cashChart'), {
+    type:'bar',
+    data:{
+      labels:liveEntities.map(e=>e.name),
+      datasets:[{data:liveEntities.map(e=>getBS(e.id)?.cash||0), backgroundColor:liveEntities.map(e=>e.color+'20'), borderColor:liveEntities.map(e=>e.color), borderWidth:1.5, borderRadius:6}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>fmtK(v),color:'#aaa',font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},y:{ticks:{color:'#555',font:{size:12}},grid:{display:false}}}}
+  });
+}
+
+function renderEntities() {
+  const el = document.getElementById('tab-entities');
+  el.innerHTML = `<div class="entity-grid">${ENTITIES_META.map(e => {
+    if (e.placeholder) return `
+      <div class="entity-card placeholder">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+          <span class="dot" style="background:${e.dot}"></span>
+          <div class="ename">${e.name}</div>
+        </div>
+        <div class="etype">${e.type}</div>
+        <div style="font-size:12px;color:#aaa;margin-top:8px;background:#f8f7f4;border-radius:6px;padding:10px;text-align:center">Coming soon · Est. close June 2025</div>
+      </div>`;
+    const pl = getPL(e.id)||{};
+    const bs = getBS(e.id)||{};
+    const live = isLive(e.id);
+    return `
+      <div class="entity-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+          <div style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:${e.dot}"></span><div class="ename">${e.name}</div></div>
+          <span class="badge ${live?'live':'mock'}">${live?'live':'demo'}</span>
+        </div>
+        <div class="etype">${e.type}</div>
+        <div class="erow"><span class="el">Revenue</span><span class="ev">${fmt(pl.revenue)}</span></div>
+        <div class="erow"><span class="el">Gross profit</span><span class="ev pos">${fmt(pl.gross)}</span></div>
+        <div class="erow"><span class="el">Op. expenses</span><span class="ev">${fmt(pl.opex)}</span></div>
+        <div class="erow"><span class="el">Net income</span><span class="ev pos">${fmt(pl.net)}</span></div>
+        <div class="erow"><span class="el">Cash</span><span class="ev">${fmt(bs.cash)}</span></div>
+        <div class="erow"><span class="el">Equity</span><span class="ev pos">${fmt(bs.equity)}</span></div>
+        <div class="erow"><span class="el">Net margin</span><span class="ev pos">${pct(pl.net,pl.revenue)}</span></div>
+      </div>`;
+  }).join('')}</div>`;
+}
+
+function renderConnections() {
+  const el = document.getElementById('tab-connections');
+  el.innerHTML = `
+    <div class="conn-panel">
+      <div style="font-size:15px;font-weight:500;margin-bottom:4px">QuickBooks connections</div>
+      <div style="font-size:13px;color:#888;margin-bottom:1.25rem">Connect each QBO company file to pull live financial data.</div>
+      ${ENTITIES_META.map(e => {
+        const live = isLive(e.id);
+        const isPlaceholder = e.placeholder;
+        return `<div class="conn-row">
+          <div class="conn-info">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="dot" style="background:${e.dot}"></span>
+              <div class="cname">${e.name}${isPlaceholder?'<span class="coming-soon">coming soon</span>':''}</div>
+            </div>
+            <div class="ctype">${e.type}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            ${isPlaceholder
+              ? `<span style="font-size:12px;color:#aaa">Activates at close</span>`
+              : live
+                ? `<button class="connect-btn connected" disabled>Connected</button>
+                   <button class="disconnect-btn" onclick="disconnect('${e.id}')">Disconnect</button>`
+                : `<button class="connect-btn" onclick="connectEntity('${e.id}')">Connect to QuickBooks</button>`
+            }
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="font-size:12px;color:#aaa;padding:0 4px">
+      Clicking "Connect to QuickBooks" opens Intuit's OAuth login. You'll authorize each company file separately. Tokens are stored server-side and never exposed in the browser.
+    </div>
+  `;
+}
+
+function connectEntity(entityId) {
+  window.open(`${API}/auth/connect/${entityId}`, '_blank', 'width=600,height=700');
+  const poll = setInterval(async () => {
+    await loadEntities();
+    if (entityStatuses[entityId]?.connected) {
+      clearInterval(poll);
+      await loadFinancials(document.getElementById('periodSel').value);
+      renderTab(currentTab);
+    }
+  }, 2000);
+  setTimeout(() => clearInterval(poll), 120000);
+}
+
+async function disconnect(entityId) {
+  await fetch(`${API}/api/disconnect/${entityId}`);
+  await loadEntities();
+  await loadFinancials(document.getElementById('periodSel').value);
+  renderTab(currentTab);
+}
+
+document.getElementById('periodSel').addEventListener('change', async () => {
+  await loadFinancials(document.getElementById('periodSel').value);
+  renderTab(currentTab);
+});
+
+(async () => {
+  await loadEntities();
+  await loadFinancials('ytd');
+  renderTab('overview');
+})();
+</script>
+</body>
+</html>

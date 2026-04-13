@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: qbo-dashboard
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: QB_CLIENT_ID
+        sync: false
+      - key: QB_CLIENT_SECRET
+        sync: false
+      - key: REDIRECT_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        sync: false
